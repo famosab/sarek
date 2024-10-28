@@ -1,9 +1,9 @@
 nextflow_workflow {
 
-    name "Test Subworkflow FASTQ_ALIGN_BWA"
+    name "Test Subworkflow FASTQ_ALIGN_PARABRICKS"
     script "../main.nf"
     config "./nextflow.config"
-    workflow "FASTQ_ALIGN_BWA"
+    workflow "FASTQ_ALIGN_PARABRICKS"
 
     tag "subworkflows"
     tag "subworkflows_nfcore"
