@@ -257,6 +257,12 @@ workflow SAREK {
             reports = reports.mix(FASTP.out.json.collect{ meta, json -> json })
             reports = reports.mix(FASTP.out.html.collect{ meta, html -> html })
 
+            if (params.aligner = 'parabricks') {
+
+                params.split_fastq = 0
+
+            }
+
             if (params.split_fastq) {
                 reads_for_alignment = FASTP.out.reads.map{ meta, reads ->
                     read_files = reads.sort(false) { a,b -> a.getName().tokenize('.')[0] <=> b.getName().tokenize('.')[0] }.collate(2)
@@ -288,6 +294,8 @@ workflow SAREK {
             if (meta.size * meta.num_lanes == 1) [ meta + [ id:meta.sample ], reads ]
             else [ meta, reads ]
         }
+
+        // TODO Move grouping of reads to separate parabricks subworkflow
 
         // reads will be sorted
         sort_bam = true

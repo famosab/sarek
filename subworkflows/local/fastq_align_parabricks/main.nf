@@ -5,10 +5,11 @@
 include { PARABRICKS_FQ2BAM      } from '../../../modules/nf-core/parabricks/fq2bam/main'
 include { APPLYBQSR } from '../../../modules/nf-core/gatk/applybqsr/main'
 
+
 workflow FASTQ_ALIGN_PARABRICKS {
 
     take:
-    
+
 
     main:
 
