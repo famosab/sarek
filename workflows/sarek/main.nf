@@ -280,6 +280,30 @@ workflow SAREK {
         // First, we must calculate number of lanes for each sample (meta.n_fastq)
         // This is needed to group reads from the same sample together using groupKey to avoid stalling the workflow
         // when reads from different samples are mixed together
+        
+        if (params.aligner = 'parabricks') {
+
+            fastq_mapped = reads_for_alignment
+                .combine(reads_grouping_key) // Creates a tuple of [ meta, bam, reads_grouping_key ]
+                .filter { meta1, files, meta2 -> meta1.sample == meta2.sample }
+                // Add n_fastq and other variables to meta
+                .map { meta1, files, meta2 ->
+                    [ meta1 + meta2, bam ]
+                }
+                // Manipulate meta map to remove old fields and add new ones
+                .map { meta, files ->
+                    [ meta - meta.subMap('id', 'read_group', 'data_type', 'num_lanes', 'read_group', 'size') + [ data_type: 'fastq_gz', id: meta.sample ], fastq ]
+                }
+                // Create groupKey from meta map
+                .map { meta, files ->
+                    [ groupKey( meta, meta.n_fastq), fastq ]
+                }
+                // Group
+                .groupTuple()
+
+
+        }
+        
         reads_for_alignment.map { meta, reads ->
                 [ meta.subMap('patient', 'sample', 'sex', 'status'), reads ]
             }
@@ -295,12 +319,11 @@ workflow SAREK {
             else [ meta, reads ]
         }
 
-        // TODO Move grouping of reads to separate parabricks subworkflow
-
         // reads will be sorted
         sort_bam = true
         FASTQ_ALIGN_BWAMEM_MEM2_DRAGMAP_SENTIEON(reads_for_alignment, index_alignment, sort_bam, fasta, fasta_fai)
-
+        FASTQ_ALIGN_PARABRICKS(reads_for_alignment...)
+        
         // Grouping the bams from the same samples not to stall the workflow
         // Use groupKey to make sure that the correct group can advance as soon as it is complete
         // and not stall the workflow until all reads from all channels are mapped

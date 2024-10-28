@@ -3,32 +3,45 @@
 //
 
 include { PARABRICKS_FQ2BAM      } from '../../../modules/nf-core/parabricks/fq2bam/main'
-include { APPLYBQSR } from '../../../modules/nf-core/gatk/applybqsr/main'
-
+include { APPLYBQSR              } from '../../../modules/nf-core/gatk/applybqsr/main'
 
 workflow FASTQ_ALIGN_PARABRICKS {
 
     take:
-
+    ch_reads // channel: [mandatory] meta, reads
+    ch_interval_file // channel: [optional for parabricks] intervals_bed_combined
+    val_sort  // boolean: [mandatory] true -> sort, false -> don't sort
+    ch_fasta
+    ch_fasta_fai
+    ch_known_sites // channel [optional for parabricks] known_sites_indels
 
     main:
-
+    ch_reports = Channel.empty()
     ch_versions = Channel.empty()
+    ch_bam = Channel.empty()
+    ch_bai = Channel.empty()
+    ch_bqsr_table = Channel.empty()
+    ch_qc_metrics = Channel.empty()
+    ch_duplicate_metrics = Channel.empty()
 
-    // TODO nf-core: substitute modules here for the modules of your subworkflow
+    PARABRICKS_FQ2BAM(ch_reads.map{meta, reads -> [ meta, ch_reads, ch_interval_file ]}, ch_fasta, ch_fasta_fai, ch_known_sites)
 
-    SAMTOOLS_SORT ( ch_bam )
-    ch_versions = ch_versions.mix(SAMTOOLS_SORT.out.versions.first())
+    // Collecting FQ2BAM outputs
+    ch_bam = bam.mix(PARABRICKS_FQ2BAM.out.bam)
+    ch_bai = bai.mix(PARABRICKS_FQ2BAM.out.bai)
+    ch_bqsr_table = ch_bqsr_table(PARABRICKS_FQ2BAM.out.bqsr_table)
+    ch_qc_metrics = ch_qc_metrics(PARABRICKS_FQ2BAM.out.qc_metrics)
+    ch_duplicate_metrics = ch_duplicate_metrics(PARABRICKS_FQ2BAM.out.duplicate_metrics)
 
-    SAMTOOLS_INDEX ( SAMTOOLS_SORT.out.bam )
-    ch_versions = ch_versions.mix(SAMTOOLS_INDEX.out.versions.first())
+    // Apply BQSR
+    PARABRICKS_APPLYBQSR(ch_bam.map{meta, bam -> [ch_bam, ch_bai, ch_bqsr_table, ch_interval_file] })
+
+    ch_versions = ch_versions.mix(PARABRICKS_FQ2BAM.out.versions)
+    ch_versions = ch_versions.mix(PARABRICKS_APPLYBQSR.out.versions)
 
     emit:
-    // TODO nf-core: edit emitted channels
-    bam      = SAMTOOLS_SORT.out.bam           // channel: [ val(meta), [ bam ] ]
-    bai      = SAMTOOLS_INDEX.out.bai          // channel: [ val(meta), [ bai ] ]
-    csi      = SAMTOOLS_INDEX.out.csi          // channel: [ val(meta), [ csi ] ]
+    bam = PARABRICKS_APPLYBQSR.out.bam      // channel: [ [meta], bam ]
+    bai = PARABRICKS_APPLYBQSR.out.bai      // channel: [ [meta], bai ]
+    versions = ch_versions                  // channel: [ versions.yml ]
 
-    versions = ch_versions                     // channel: [ versions.yml ]
 }
-
