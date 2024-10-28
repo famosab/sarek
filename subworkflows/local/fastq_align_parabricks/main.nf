@@ -1,16 +1,14 @@
-// TODO nf-core: If in doubt look at other nf-core/subworkflows to see how we are doing things! :)
-//               https://github.com/nf-core/modules/tree/master/subworkflows
-//               You can also ask for help via your pull request or on the #subworkflows channel on the nf-core Slack workspace:
-//               https://nf-co.re/join
-// TODO nf-core: A subworkflow SHOULD import at least two modules
+//
+// Alignment and BQSR with Nvidia CLARA Parabricks
+//
 
 include { PARABRICKS_FQ2BAM      } from '../../../modules/nf-core/parabricks/fq2bam/main'
+include { APPLYBQSR } from '../../../modules/nf-core/gatk/applybqsr/main'
 
 workflow FASTQ_ALIGN_PARABRICKS {
 
     take:
-    // TODO nf-core: edit input (take) channels
-    ch_bam // channel: [ val(meta), [ bam ] ]
+    
 
     main:
 
