@@ -10,7 +10,7 @@ workflow FASTQ_ALIGN_PARABRICKS {
     take:
     ch_reads // channel: [mandatory] meta, reads
     ch_interval_file // channel: [optional for parabricks] intervals_bed_combined
-    val_sort  // boolean: [mandatory] true -> sort, false -> don't sort
+    // val_sort  // boolean: [mandatory] true -> sort, false -> don't sort
     ch_fasta
     ch_fasta_fai
     ch_known_sites // channel [optional for parabricks] known_sites_indels
